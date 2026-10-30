@@ -92,7 +92,7 @@ The output is static and can be deployed to Vercel or any compatible static host
 | Climate Control | Provides complete external weather controls, including wind and rainfall. |
 | Sensors | Displays each virtual sensor, live reading, status, reconnection control, and fault test. |
 | Automation | Explains active decisions, controls device modes, and returns all devices to automatic mode. |
-| Circuit | Opens an interactive Wokwi-inspired wiring workspace with live sensor values, pin tags, controller flow, relay states, and component usage details. |
+| Circuit | Opens an interactive Wokwi-inspired Arduino wiring workspace with live sensor values, pin tags, LCD telemetry, relay states, and component usage details. |
 | Analytics | Displays temperature and soil-moisture history from the bounded simulation buffer. |
 | Settings | Resets, saves, and restores browser-local simulation state. |
 
@@ -114,7 +114,7 @@ The 3D ESP32-style board can also be selected. Its live control panel is availab
 
 ### Circuit workspace
 
-The **Circuit** tab is a Wokwi-inspired schematic workspace for the simulated electronics. Select any component to inspect its pin assignments, role, tags, and current live signal. The diagram maps the DHT22 to GPIO 4, capacitive soil sensor to ADC 34, BH1750 to I²C GPIO 21/22, and relay outputs to GPIO 25 (fan), 26 (pump), and 27 (grow lights). Relay channels reflect their actual actuator state and can be operated from the component inspector.
+The **Circuit** tab is a Wokwi-inspired Arduino Uno wiring workspace. It follows a focused physical layout: DHT22 on D4, a 16×2 I²C LCD on A4/A5, and three virtual output relay channels on D5 (fan), D6 (pump), and D7 (grow lights). The LCD shows the actual simulated air temperature and humidity; relay channels reflect their actual actuator state and can be operated from the component inspector. The Arduino-style layout is a visual wiring model—the browser simulation remains hardware-free.
 
 ## Simulation model
 
