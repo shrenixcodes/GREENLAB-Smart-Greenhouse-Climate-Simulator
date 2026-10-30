@@ -2,7 +2,7 @@
 
 **Smart Greenhouse Climate Decision and Monitoring Simulator**
 
-GREENLAB is a polished browser simulation for learning how a greenhouse responds to weather, sensor readings, automation decisions, and manual control. It combines an interactive 3D greenhouse with transparent IoT-style monitoring and lightweight farming challenges—without requiring a backend, an API key, or physical hardware.
+GREENLAB is a polished browser simulation for learning how a greenhouse responds to weather, sensor readings, automation decisions, and manual control. It combines an interactive 3D greenhouse with transparent IoT-style monitoring—without requiring a backend, an API key, or physical hardware.
 
 ## Contents
 
@@ -30,15 +30,15 @@ GREENLAB makes the system understandable and interactive. Its objectives are to:
 2. Model explainable climate relationships using stable, frame-rate-independent simulation steps.
 3. Derive virtual sensor readings from the actual simulated environment.
 4. Show how automation decisions safely control fans, irrigation, and grow lights.
-5. Let users learn through climate scenarios, plant health, resource use, and challenges.
+5. Let users learn through plant health, resource use, and transparent operational feedback.
 
 ## Features
 
 ### Interactive greenhouse
 
-- Procedural 3D glasshouse with crop beds, pathways, irrigation equipment, water tank, sensor station, ESP32-style controller, fans, grow lights, and a field phone.
+- Procedural 3D glasshouse with crop beds, pathways, irrigation equipment, water tank, sensor station, ESP32-style controller, fans, grow lights, and a dashboard terminal.
 - Orbit camera controls for zooming and exploring the environment.
-- Clickable plant beds, devices, tank, sensor unit, controller, grow lights, and phone; the selected object exposes live status information.
+- Clickable plant beds, devices, tank, sensor unit, controller, grow lights, and dashboard terminal; the selected object exposes live status information.
 - Animation tied to the simulation: fan blades rotate when active, pump illumination signals irrigation, grow lights change the scene, and plant geometry changes with growth and health.
 
 ### Climate and crop simulation
@@ -53,8 +53,8 @@ GREENLAB makes the system understandable and interactive. Its objectives are to:
 - Virtual DHT22 climate sensor, capacitive soil probe, and BH1750 light meter.
 - Sensor disconnection and fault testing, connection status, measurement noise, and live previous/current values.
 - Automated fan, pump, and grow-light control with hysteresis, manual override, irrigation duration protection, and safe sensor-fault messaging.
-- Historical charts, bounded activity log, water and energy tracking, browser persistence, achievements, and Heatwave, Drought, and Cloudy Week scenarios.
-- An animated in-game field phone with a responsive dashboard, climate chart, actuator controls, ESP32 pins, and serial-monitor-style event output.
+- Historical charts, bounded activity log, water and energy tracking, and browser persistence.
+- An animated operations dashboard with a responsive telemetry view, climate chart, actuator controls, ESP32 pins, and serial-monitor-style event output.
 
 ## Quick start
 
@@ -87,13 +87,12 @@ The output is static and can be deployed to Vercel or any compatible static host
 
 | Area | What it does |
 | --- | --- |
-| Overview | Shows the current growing situation and quick routes to live trends and the field phone. |
-| Greenhouse | Explains exploration mode and provides direct phone and selection controls. |
+| Overview | Shows the current operating situation and quick routes to live trends and the dashboard. |
+| Greenhouse | Explains asset inspection mode and provides direct dashboard and selection controls. |
 | Climate Control | Provides complete external weather controls, including wind and rainfall. |
 | Sensors | Displays each virtual sensor, live reading, status, reconnection control, and fault test. |
 | Automation | Explains active decisions, controls device modes, and returns all devices to automatic mode. |
 | Analytics | Displays temperature and soil-moisture history from the bounded simulation buffer. |
-| Challenges | Starts a Heatwave, Drought, or Cloudy Week challenge and displays achievements. |
 | Settings | Resets, saves, and restores browser-local simulation state. |
 
 ### Simulation controls
@@ -106,11 +105,11 @@ The output is static and can be deployed to Vercel or any compatible static host
 
 Every simulator action has a visible state change or confirmation. Manual actuator actions change the actual model; automatic control will not immediately overwrite a device in manual mode.
 
-### In-game phone and controller
+### Operations dashboard and controller
 
-Click the phone inside the 3D greenhouse, or use **Open in-game phone**. The phone opens as a full-screen control surface with actual live readings, temperature/humidity trends, automation controls, controller data flow, and recent events. Use the close button, click the backdrop, or press <kbd>Esc</kbd> to return to the greenhouse.
+Click the dashboard terminal inside the 3D greenhouse, or use **Open dashboard**. The dashboard opens as a full-screen control surface with actual live readings, temperature/humidity trends, automation controls, controller data flow, and recent events. Use the close button, click the backdrop, or press <kbd>Esc</kbd> to return to the greenhouse.
 
-The 3D ESP32-style board can also be selected. Its live control panel is available from the field phone and is explicitly labelled as simulated.
+The 3D ESP32-style board can also be selected. Its live control panel is available from the dashboard and is explicitly labelled as simulated.
 
 ## Simulation model
 
@@ -170,12 +169,12 @@ For the selected crop profile, automation evaluates the following rules:
 - A disconnected or malfunctioning sensor produces safe-fallback messaging rather than pretending a reading is reliable.
 - A manually operated device remains in manual mode until the user returns it to automatic mode.
 
-Decision text is shown in the main dashboard, the automation workspace, the in-game phone, and the activity log.
+Decision text is shown in the main dashboard, the automation workspace, the operations dashboard, and the activity log.
 
 ## Architecture
 
 ```text
-Weather controls and scenarios
+Weather controls
              ↓
        Climate engine ───────→ Plant health and growth
              ↓                         ↓
@@ -185,21 +184,20 @@ Weather controls and scenarios
              ↓
        Actuator state and event log
              ↓
-3D greenhouse · dashboard · field phone · charts
+3D greenhouse · dashboard · telemetry console · charts
 ```
 
-The React interface renders a single simulation state. The Three.js scene reflects that state; it does not invent independent animations or sensor values. This keeps the fan, pump, lights, controller, phone, dashboards, charts, and event history consistent.
+The React interface renders a single simulation state. The Three.js scene reflects that state; it does not invent independent animations or sensor values. This keeps the fan, pump, lights, controller, dashboards, charts, and event history consistent.
 
 ## Project structure
 
 ```text
 src/
-  App.tsx                         Application shell, controls, panels, phone dashboard
+  App.tsx                         Application shell, controls, panels, operations dashboard
   components/
     GreenhouseScene.tsx            Procedural Three.js greenhouse and object selection
   sim/
     engine.ts                      Time-step climate, sensors, automation, and growth logic
-    scenarios.ts                   Challenge definitions and starting conditions
     types.ts                       Shared simulation types and crop profiles
   styles.css                       Responsive visual system and motion preferences
 ```
@@ -229,16 +227,16 @@ The production build includes TypeScript checking and Vite bundling. The simulat
 Capture the following views after running the app locally and add them here when preparing a public project page:
 
 1. The 3D greenhouse with active equipment.
-2. The in-game field phone dashboard.
-3. Climate Control with an active scenario.
+2. The operations dashboard.
+3. Climate Control with modified weather inputs.
 4. The Analytics and ESP32 control views.
 
 ## Accessibility and responsive behavior
 
-- The field phone can be opened with an ordinary HTML button, not only through a 3D click target.
-- Phone close actions support mouse, touch, and <kbd>Esc</kbd>.
+- The dashboard can be opened with an ordinary HTML button, not only through a 3D click target.
+- Dashboard close actions support mouse, touch, and <kbd>Esc</kbd>.
 - Controls use labels or accessible names where interaction requires them.
-- Mobile navigation collapses into a sidebar and the phone uses a bottom-sheet layout.
+- Mobile navigation collapses into a sidebar and the dashboard uses a bottom-sheet layout.
 - `prefers-reduced-motion` reduces transition and animation duration.
 
 ## Limitations and future scope
@@ -257,7 +255,7 @@ Capture the following views after running the app locally and add them here when
 - Weather schedules, disease/pest models, and crop-specific nutrient systems.
 - Calibration tools and exportable growing reports.
 - An optional ESP32/Arduino adapter using a clearly separated hardware transport layer.
-- Scenario scoring, more achievements, and shared greenhouse missions.
+- Advanced alert rules, calibration views, and shared greenhouse missions.
 
 ## License
 
