@@ -1,70 +1,264 @@
 # GREENLAB
 
-GREENLAB is a browser-based smart greenhouse climate decision and monitoring simulator. It blends an interactive 3D growing environment with transparent IoT-style sensing, climate automation, and lightweight farming-game challenges.
+**Smart Greenhouse Climate Decision and Monitoring Simulator**
 
-## Why it exists
+GREENLAB is a polished browser simulation for learning how a greenhouse responds to weather, sensor readings, automation decisions, and manual control. It combines an interactive 3D greenhouse with transparent IoT-style monitoring and lightweight farming challenges—without requiring a backend, an API key, or physical hardware.
 
-Greenhouse control is a balancing act: heat, humidity, soil water, light, ventilation, and crop requirements all affect each other. GREENLAB makes those relationships visible and explorable without requiring physical hardware.
+## Contents
 
-## What is included
+- [Problem and objectives](#problem-and-objectives)
+- [Features](#features)
+- [Quick start](#quick-start)
+- [Using the simulator](#using-the-simulator)
+- [Simulation model](#simulation-model)
+- [Virtual sensors and controller](#virtual-sensors-and-controller)
+- [Automation methodology](#automation-methodology)
+- [Architecture](#architecture)
+- [Project structure](#project-structure)
+- [Technology stack](#technology-stack)
+- [Validation](#validation)
+- [Screenshots](#screenshots)
+- [Limitations and future scope](#limitations-and-future-scope)
 
-- Procedural interactive 3D greenhouse with crop beds, glass structure, tank, pump, sensor unit, grow lights, and a rotating ventilation fan.
-- Tomato, lettuce, and cucumber crop profiles with environmental targets and growth stages.
-- Stable, time-step-based climate model for heat, humidity, solar load, cloud cover, wind, evaporation, irrigation, ventilation, and supplemental light.
-- Virtual DHT22, capacitive soil moisture, and BH1750 sensors that derive their readings from the simulated environment. Sensors can be disconnected or fault-tested.
-- A separate automation decision layer with hysteresis, maximum irrigation runtime, manual mode, safety fallback messaging, and decision explanations.
-- Health, suitability, crop growth, water usage, energy usage, bounded time-series history, live event log, and browser persistence.
-- Heatwave, drought, and cloudy-week scenarios plus connected achievements.
-- Responsive controls, keyboard-accessible HTML buttons, reduced-motion handling, and an accessible fallback interaction path through the interface.
-- An in-game field phone that opens to a live touch-style dashboard, including climate trends, actuators, sensor status, ESP32 pins, and serial-monitor-style logs.
-- A clearly labelled simulated ESP32 controller with DHT22 on GPIO 4, soil moisture on ADC 34, BH1750 on I²C 21/22, and outputs for the fan (25), pump (26), and grow lights (27).
+## Problem and objectives
 
-## Architecture
+Growing conditions in a greenhouse are tightly linked: solar energy raises temperature, ventilation exchanges heat and humidity, irrigation changes soil moisture, and light availability affects plant development. Raw sensor values alone do not explain those relationships or show why a controller acts.
 
-```text
-Weather controls → Climate simulation → Virtual sensors → Decision engine
-       ↑                    ↓                 ↓               ↓
-  Scenario system ← Plant health/growth ← Actuator effects ← Manual controls
-                              ↓
-                  3D scene, dashboard, charts, event log
-```
+GREENLAB makes the system understandable and interactive. Its objectives are to:
 
-The simulation lives in `src/sim/engine.ts`. Rendering (`src/components/GreenhouseScene.tsx`) only reflects current simulation state, so fan rotation, irrigation pump light, crop condition, and grow-light illumination stay connected to actual device effects.
+1. Visualize a greenhouse as a living environment rather than a static dashboard.
+2. Model explainable climate relationships using stable, frame-rate-independent simulation steps.
+3. Derive virtual sensor readings from the actual simulated environment.
+4. Show how automation decisions safely control fans, irrigation, and grow lights.
+5. Let users learn through climate scenarios, plant health, resource use, and challenges.
 
-## Sensor simulation
+## Features
 
-| Virtual sensor | Hardware equivalent | Source value |
-| --- | --- | --- |
-| Climate sensor | DHT22 | Internal temperature and humidity |
-| Soil probe | Capacitive moisture sensor | Soil moisture model |
-| Light meter | BH1750 | Natural + artificial greenhouse light |
+### Interactive greenhouse
 
-All sensors and ESP32-like device behavior are simulated in the browser. GREENLAB does not claim physical hardware integration.
+- Procedural 3D glasshouse with crop beds, pathways, irrigation equipment, water tank, sensor station, ESP32-style controller, fans, grow lights, and a field phone.
+- Orbit camera controls for zooming and exploring the environment.
+- Clickable plant beds, devices, tank, sensor unit, controller, grow lights, and phone; the selected object exposes live status information.
+- Animation tied to the simulation: fan blades rotate when active, pump illumination signals irrigation, grow lights change the scene, and plant geometry changes with growth and health.
 
-## Run locally
+### Climate and crop simulation
 
-Requirements: Node.js 20 or later.
+- Adjustable outside temperature, humidity, sunlight, cloud cover, wind, and rainfall.
+- Simulated internal temperature, humidity, soil moisture, light availability, evaporation, irrigation, ventilation, and solar heating.
+- Tomato, lettuce, and cucumber crop profiles with individual target ranges.
+- Gradual crop health recovery/decline, suitability scoring, growth progression, water use, and growth stages from Seed through Harvest-ready.
+
+### Monitoring, automation, and gameplay
+
+- Virtual DHT22 climate sensor, capacitive soil probe, and BH1750 light meter.
+- Sensor disconnection and fault testing, connection status, measurement noise, and live previous/current values.
+- Automated fan, pump, and grow-light control with hysteresis, manual override, irrigation duration protection, and safe sensor-fault messaging.
+- Historical charts, bounded activity log, water and energy tracking, browser persistence, achievements, and Heatwave, Drought, and Cloudy Week scenarios.
+- An animated in-game field phone with a responsive dashboard, climate chart, actuator controls, ESP32 pins, and serial-monitor-style event output.
+
+## Quick start
+
+### Requirements
+
+- Node.js 20 or later
+- npm
+
+### Install and run
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open the local address Vite displays. For a production check:
+Open the local URL displayed by Vite. The application runs entirely in the browser after dependencies have been installed.
+
+### Production build
 
 ```bash
 npm run build
 npm run preview
 ```
 
-## Simulation workflow
+The output is static and can be deployed to Vercel or any compatible static host.
 
-1. Adjust weather in the right-side weather panel or load a challenge.
-2. The climate engine advances in stable time increments at 1×, 2×, or 5× speed.
-3. Virtual sensors take readings from that climate state.
-4. The decision engine compares readings with crop thresholds and issues actuator commands.
-5. Fans, irrigation, and lights feed back into the environment; plant health and growth respond gradually.
+## Using the simulator
+
+### Main navigation
+
+| Area | What it does |
+| --- | --- |
+| Overview | Shows the current growing situation and quick routes to live trends and the field phone. |
+| Greenhouse | Explains exploration mode and provides direct phone and selection controls. |
+| Climate Control | Provides complete external weather controls, including wind and rainfall. |
+| Sensors | Displays each virtual sensor, live reading, status, reconnection control, and fault test. |
+| Automation | Explains active decisions, controls device modes, and returns all devices to automatic mode. |
+| Analytics | Displays temperature and soil-moisture history from the bounded simulation buffer. |
+| Challenges | Starts a Heatwave, Drought, or Cloudy Week challenge and displays achievements. |
+| Settings | Resets, saves, and restores browser-local simulation state. |
+
+### Simulation controls
+
+- **Pause/Resume:** stops or restarts model advancement without clearing the current state.
+- **1× / 2× / 5×:** changes simulated time speed.
+- **Crop selector:** switches the crop profile used by the decision and growth engines.
+- **Save/Restore:** stores and restores a JSON simulation snapshot in `localStorage`.
+- **Reset greenhouse:** starts a new baseline simulation.
+
+Every simulator action has a visible state change or confirmation. Manual actuator actions change the actual model; automatic control will not immediately overwrite a device in manual mode.
+
+### In-game phone and controller
+
+Click the phone inside the 3D greenhouse, or use **Open in-game phone**. The phone opens as a full-screen control surface with actual live readings, temperature/humidity trends, automation controls, controller data flow, and recent events. Use the close button, click the backdrop, or press <kbd>Esc</kbd> to return to the greenhouse.
+
+The 3D ESP32-style board can also be selected. Its live control panel is available from the field phone and is explicitly labelled as simulated.
+
+## Simulation model
+
+The model is implemented in `src/sim/engine.ts` and advances using elapsed time rather than render-frame counts. This keeps the simulation predictable across different rendering speeds.
+
+| Relationship | Simplified behavior |
+| --- | --- |
+| Solar load | Natural light is reduced by cloud cover and raises the internal temperature target. |
+| Ventilation | Fan operation and wind increase exchange between internal and outside temperature/humidity. |
+| Irrigation | An active pump gradually increases soil moisture and water usage. |
+| Evaporation | Soil moisture declines over time; higher temperature and ventilation accelerate the decline. |
+| Grow lights | Artificial light is added to available natural illumination when the actuator is active. |
+| Plant response | Suitability is calculated from crop-specific temperature, humidity, soil, and light conditions; health and growth change gradually. |
+
+The model is intentionally explainable, not a calibrated agronomic digital twin.
+
+## Virtual sensors and controller
+
+All hardware is virtual. Sensor values are derived from the greenhouse climate state, with configurable noise and fault/disconnection behavior.
+
+| Virtual device | Hardware equivalent | Reading source | Simulated connection |
+| --- | --- | --- | --- |
+| Climate sensor | DHT22 | Internal temperature and humidity | GPIO 4 |
+| Soil probe | Capacitive soil moisture sensor | Internal soil moisture | ADC 34 |
+| Light meter | BH1750 | Natural and artificial greenhouse light | I²C SDA 21 / SCL 22 |
+| Ventilation fan | Relay/driver output | Automation or manual command | GPIO 25 |
+| Irrigation pump | Relay/driver output | Automation or manual command | GPIO 26 |
+| Grow lights | Relay/driver output | Automation or manual command | GPIO 27 |
+
+The ESP32 control panel shows these pin assignments, live input/output states, a connected/offline indicator, and a serial-monitor-style view of simulation events. It is designed as a UI boundary that could later be connected to a real device adapter, but no physical Arduino, ESP32, or serial integration is present in this version.
+
+## Automation methodology
+
+The control system is separate from rendering and follows this sequence:
+
+```text
+Weather and actuator effects
+          ↓
+Climate simulation state
+          ↓
+Virtual sensor readings
+          ↓
+Crop threshold evaluation
+          ↓
+Actuator command and device state
+          ↓
+Updated climate, plants, charts, and events
+```
+
+For the selected crop profile, automation evaluates the following rules:
+
+- Temperature above the upper target enables ventilation.
+- Soil moisture below the lower target enables irrigation.
+- Available light below the crop target enables grow lights.
+- Hysteresis keeps a running device active until the condition has safely moved beyond its off threshold, which avoids rapid switching.
+- Pump runtime is limited to a maximum irrigation cycle.
+- A disconnected or malfunctioning sensor produces safe-fallback messaging rather than pretending a reading is reliable.
+- A manually operated device remains in manual mode until the user returns it to automatic mode.
+
+Decision text is shown in the main dashboard, the automation workspace, the in-game phone, and the activity log.
+
+## Architecture
+
+```text
+Weather controls and scenarios
+             ↓
+       Climate engine ───────→ Plant health and growth
+             ↓                         ↓
+       Virtual sensors              Metrics/history
+             ↓                         ↓
+       Decision engine ← Manual device controls
+             ↓
+       Actuator state and event log
+             ↓
+3D greenhouse · dashboard · field phone · charts
+```
+
+The React interface renders a single simulation state. The Three.js scene reflects that state; it does not invent independent animations or sensor values. This keeps the fan, pump, lights, controller, phone, dashboards, charts, and event history consistent.
+
+## Project structure
+
+```text
+src/
+  App.tsx                         Application shell, controls, panels, phone dashboard
+  components/
+    GreenhouseScene.tsx            Procedural Three.js greenhouse and object selection
+  sim/
+    engine.ts                      Time-step climate, sensors, automation, and growth logic
+    scenarios.ts                   Challenge definitions and starting conditions
+    types.ts                       Shared simulation types and crop profiles
+  styles.css                       Responsive visual system and motion preferences
+```
+
+## Technology stack
+
+- React 19 and TypeScript
+- Vite
+- Three.js and React Three Fiber
+- Recharts
+- Lucide React icons
+- Browser `localStorage` persistence
+- CSS animations and responsive layout
+
+## Validation
+
+Run the production validation command before deployment:
+
+```bash
+npm run build
+```
+
+The production build includes TypeScript checking and Vite bundling. The simulation is intentionally local-only, so there is no backend or API configuration to supply.
+
+## Screenshots
+
+Capture the following views after running the app locally and add them here when preparing a public project page:
+
+1. The 3D greenhouse with active equipment.
+2. The in-game field phone dashboard.
+3. Climate Control with an active scenario.
+4. The Analytics and ESP32 control views.
+
+## Accessibility and responsive behavior
+
+- The field phone can be opened with an ordinary HTML button, not only through a 3D click target.
+- Phone close actions support mouse, touch, and <kbd>Esc</kbd>.
+- Controls use labels or accessible names where interaction requires them.
+- Mobile navigation collapses into a sidebar and the phone uses a bottom-sheet layout.
+- `prefers-reduced-motion` reduces transition and animation duration.
 
 ## Limitations and future scope
 
-The model is deliberately explainable rather than an agronomic digital twin. Future work could add per-bed zones, richer weather schedules, more crop diseases, real device adapters, multi-user farming missions, and exportable reports.
+### Current limitations
+
+- The climate equations are simplified for transparency and playability.
+- One greenhouse climate zone and one crop profile are simulated at a time.
+- Rainfall is an adjustable scenario input but the current enclosed glasshouse does not route it directly into soil moisture.
+- There is no user account, cloud sync, physical device connection, or multi-user mode.
+- Charts use bounded browser-memory history rather than long-term data storage.
+
+### Future scope
+
+- Multiple beds and environmental zones.
+- Weather schedules, disease/pest models, and crop-specific nutrient systems.
+- Calibration tools and exportable growing reports.
+- An optional ESP32/Arduino adapter using a clearly separated hardware transport layer.
+- Scenario scoring, more achievements, and shared greenhouse missions.
+
+## License
+
+No license has been specified for this repository.
