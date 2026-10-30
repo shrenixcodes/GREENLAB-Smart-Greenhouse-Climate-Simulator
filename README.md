@@ -16,6 +16,8 @@ Greenhouse control is a balancing act: heat, humidity, soil water, light, ventil
 - Health, suitability, crop growth, water usage, energy usage, bounded time-series history, live event log, and browser persistence.
 - Heatwave, drought, and cloudy-week scenarios plus connected achievements.
 - Responsive controls, keyboard-accessible HTML buttons, reduced-motion handling, and an accessible fallback interaction path through the interface.
+- An in-game field phone that opens to a live touch-style dashboard, including climate trends, actuators, sensor status, ESP32 pins, and serial-monitor-style logs.
+- A clearly labelled simulated ESP32 controller with DHT22 on GPIO 4, soil moisture on ADC 34, BH1750 on I²C 21/22, and outputs for the fan (25), pump (26), and grow lights (27).
 
 ## Architecture
 

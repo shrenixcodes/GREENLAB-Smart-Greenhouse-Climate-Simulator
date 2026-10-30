@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Activity, Bot, CloudSun, Droplets, Fan, Gauge, Leaf, Lightbulb, Menu, Pause, Play, RotateCcw, Save, Settings, Sprout, Trophy, Wind, X, Zap } from 'lucide-react'
+import { Activity, Bot, CloudSun, Cpu, Droplets, Fan, Gauge, Leaf, Lightbulb, Menu, Pause, Play, Radio, RotateCcw, Save, Settings, Smartphone, Sprout, Trophy, Wind, X, Zap } from 'lucide-react'
 import { Area, AreaChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import GreenhouseScene from './components/GreenhouseScene'
 import { changeCrop, createSimulation, step, toggleActuator, toggleSensor, updateWeather } from './sim/engine'
@@ -31,6 +31,29 @@ function PanelTitle({ icon: Icon, title, trailing }: { icon: typeof Leaf; title:
   return <div className="panel-title"><span><Icon size={16} /> {title}</span>{trailing}</div>
 }
 
+function PhoneDashboard({ sim, chartData, onClose, onToggle, onMode }: { sim: Simulation; chartData: Simulation['history']; onClose: () => void; onToggle: (id: ActuatorId) => void; onMode: (id: ActuatorId) => void }) {
+  const sensorOnline = Object.values(sim.sensors).every(sensor => sensor.connected && !sensor.malfunction)
+  const pins = [
+    ['DHT22 climate', 'GPIO 4', `${sim.climate.temperature.toFixed(1)}°C · ${sim.climate.humidity.toFixed(0)}%`],
+    ['Soil moisture', 'ADC 34', `${sim.climate.soilMoisture.toFixed(0)}%`],
+    ['BH1750 light', 'I²C 21 / 22', `${Math.round(sim.climate.light / 1000)}k lux`],
+    ['Ventilation fan', 'GPIO 25', sim.actuators.fan.active ? 'HIGH · active' : 'LOW · standby'],
+    ['Irrigation pump', 'GPIO 26', sim.actuators.pump.active ? 'HIGH · active' : 'LOW · standby'],
+    ['Grow lights', 'GPIO 27', sim.actuators.lights.active ? 'HIGH · active' : 'LOW · standby']
+  ]
+  return <div className="phone-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) onClose() }}><article className="phone-dashboard" role="dialog" aria-modal="true" aria-label="GREENLAB mobile dashboard">
+    <header className="phone-header"><div><span className="phone-notch" /><small>GREENLAB MOBILE</small><b>Greenhouse 01</b></div><div className="phone-header-status"><span className={sensorOnline ? 'connected' : 'offline'}><Radio size={13} /> {sensorOnline ? 'LIVE' : 'CHECK SENSORS'}</span><button onClick={onClose} aria-label="Close in-game phone"><X size={18} /></button></div></header>
+    <div className="phone-scroll">
+      <section className="phone-hero"><div><span>CLIMATE AT A GLANCE</span><h2>{sim.climate.temperature.toFixed(1)}°<small>C</small></h2><p>Humidity {sim.climate.humidity.toFixed(0)}% · {sim.plant.suitability}% crop suitability</p></div><div className="phone-hero-leaf"><Leaf size={35} /></div></section>
+      <section className="phone-readings"><div><CloudSun size={14} /><small>Temperature</small><b>{sim.climate.temperature.toFixed(1)}°C</b></div><div><Droplets size={14} /><small>Humidity</small><b>{sim.climate.humidity.toFixed(0)}%</b></div><div><Sprout size={14} /><small>Soil</small><b>{sim.climate.soilMoisture.toFixed(0)}%</b></div><div><Lightbulb size={14} /><small>Light</small><b>{Math.round(sim.climate.light / 1000)}k</b></div></section>
+      <section className="phone-section"><div className="phone-section-title"><b>Temperature & humidity</b><span>LIVE</span></div><ResponsiveContainer width="100%" height={138}><AreaChart data={chartData}><defs><linearGradient id="phoneTemp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#d7a45d" stopOpacity=".45" /><stop offset="1" stopColor="#d7a45d" stopOpacity="0" /></linearGradient></defs><XAxis dataKey="time" hide /><YAxis hide domain={['dataMin - 2', 'dataMax + 2']} /><Tooltip /><Area type="monotone" dataKey="temperature" stroke="#d38d3d" fill="url(#phoneTemp)" strokeWidth={2} /><Area type="monotone" dataKey="humidity" stroke="#5da3a2" fill="none" strokeWidth={2} /></AreaChart></ResponsiveContainer></section>
+      <section className="phone-section"><div className="phone-section-title"><b>Automation controls</b><span className="sim-label">SIMULATED</span></div><div className="phone-actuators">{(['fan', 'pump', 'lights'] as ActuatorId[]).map(id => { const device = sim.actuators[id]; const Icon = id === 'fan' ? Fan : id === 'pump' ? Droplets : Lightbulb; return <div key={id}><span><Icon size={15} /><b>{device.label.replace('Ventilation ', '').replace('Irrigation ', '')}</b><small>{device.mode.toUpperCase()}</small></span><button className={device.active ? 'active' : ''} onClick={() => onToggle(id)} aria-label={`Toggle ${device.label}`}>{device.active ? 'ON' : 'OFF'}</button><button className="phone-mode" onClick={() => onMode(id)}>{device.mode === 'auto' ? 'AUTO' : 'MAN'}</button></div> })}</div><p className="phone-decision"><Bot size={14} /> {sim.decisions[0]}</p></section>
+      <section className="phone-section controller-section"><div className="phone-section-title"><b><Cpu size={15} /> ESP32 control panel</b><span className={sensorOnline ? 'connected' : 'offline'}>{sensorOnline ? 'CONNECTED' : 'OFFLINE'}</span></div><p className="simulation-note">Simulated controller · physical hardware adapter ready</p><div className="pin-grid">{pins.map(([name, pin, value]) => <div key={name}><span><b>{name}</b><small>{pin}</small></span><em className={value.includes('HIGH') ? 'pin-high' : ''}>{value}</em></div>)}</div></section>
+      <section className="phone-section serial-section"><div className="phone-section-title"><b>Serial monitor</b><span>115200 BAUD</span></div>{sim.logs.slice(0, 5).map(log => <p key={log.id}><time>{log.time}</time> <span>{log.type.toUpperCase()}</span> {log.message}</p>)}</section>
+    </div>
+  </article></div>
+}
+
 export default function App() {
   const [sim, setSim] = useState<Simulation>(() => {
     try { const stored = localStorage.getItem('greenlab-simulation'); return stored ? JSON.parse(stored) : createSimulation() } catch { return createSimulation() }
@@ -38,6 +61,7 @@ export default function App() {
   const [activeNav, setActiveNav] = useState('Overview')
   const [selected, setSelected] = useState<string | null>(null)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [phoneOpen, setPhoneOpen] = useState(false)
   const profile = cropProfiles[sim.crop]
 
   useEffect(() => {
@@ -48,6 +72,11 @@ export default function App() {
     return () => cancelAnimationFrame(frame)
   }, [])
   useEffect(() => { localStorage.setItem('greenlab-simulation', JSON.stringify(sim)) }, [sim])
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') setPhoneOpen(false) }
+    window.addEventListener('keydown', closeOnEscape)
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [])
 
   const setWeather = (patch: Partial<Weather>) => setSim(current => updateWeather(current, patch))
   const toggleMode = (id: ActuatorId) => setSim(current => ({ ...current, actuators: { ...current.actuators, [id]: { ...current.actuators[id], mode: current.actuators[id].mode === 'auto' ? 'manual' : 'auto' } } }))
@@ -58,6 +87,8 @@ export default function App() {
     if (selected === 'pump') return { title: 'Irrigation pump', detail: sim.actuators.pump.active ? 'Watering crop beds' : 'Ready for irrigation', action: 'Soil moisture determines water cycles.' }
     if (selected === 'tank') return { title: 'Water storage tank', detail: `${Math.max(12, 100 - sim.plant.waterUsed).toFixed(0)}% reserve`, action: 'Water consumption is recorded in Analytics.' }
     if (selected === 'sensor') return { title: 'Environmental sensor', detail: `DHT22 · ${sim.climate.temperature.toFixed(1)}°C / ${sim.climate.humidity.toFixed(0)}%`, action: 'Live reading feeding the automation engine.' }
+    if (selected === 'phone') return { title: 'GREENLAB field phone', detail: 'Live dashboard open', action: 'Use this in-game phone to review and operate the greenhouse.' }
+    if (selected === 'controller') return { title: 'ESP32 controller', detail: 'Simulated control board · connected', action: 'Maps sensor inputs to automation outputs and the serial monitor.' }
     return { title: 'Grow light', detail: sim.actuators.lights.active ? 'Active · supplemental illumination' : 'Off · waiting for low light', action: 'Low daylight triggers this device in auto mode.' }
   }, [selected, profile.name, sim])
 
@@ -74,7 +105,7 @@ export default function App() {
         <section className="overview-head"><div><span className="eyebrow">LIVE ENVIRONMENT</span><h2>Inside your greenhouse</h2><p>Automation is continually matching the climate to your {profile.name.toLowerCase()} crop profile.</p></div><div className="health-badge"><span><Leaf size={19} /></span><div><small>PLANT HEALTH</small><b>{Math.round(sim.plant.health)}%</b></div><div className="health-bar"><i style={{ width: `${sim.plant.health}%` }} /></div></div></section>
         <section className="metric-grid"><Metric icon={CloudSun} label="Temperature" value={sim.climate.temperature.toFixed(1)} unit="°C" tone="gold" /><Metric icon={Droplets} label="Humidity" value={sim.climate.humidity.toFixed(0)} unit="%" tone="blue" /><Metric icon={Sprout} label="Soil moisture" value={sim.climate.soilMoisture.toFixed(0)} unit="%" /><Metric icon={Lightbulb} label="Light level" value={`${Math.round(sim.climate.light / 1000)}k`} unit=" lux" tone="gold" /></section>
         <section className="main-grid">
-          <div className="scene-wrap"><GreenhouseScene sim={sim} selected={selected} onSelect={setSelected} />{selectedInfo && <div className="selection-card"><button onClick={() => setSelected(null)} aria-label="Close selection"><X size={15} /></button><span className="selection-dot" /><b>{selectedInfo.title}</b><small>{selectedInfo.detail}</small><p>{selectedInfo.action}</p></div>}<div className="scene-stats"><span><Wind size={14} /> Wind {sim.weather.wind} km/h</span><span><CloudSun size={14} /> {sim.weather.cloudCover}% cloud cover</span></div></div>
+          <div className="scene-wrap"><GreenhouseScene sim={sim} selected={selected} onSelect={setSelected} onOpenPhone={() => setPhoneOpen(true)} />{selectedInfo && <div className="selection-card"><button onClick={() => setSelected(null)} aria-label="Close selection"><X size={15} /></button><span className="selection-dot" /><b>{selectedInfo.title}</b><small>{selectedInfo.detail}</small><p>{selectedInfo.action}</p></div>}<div className="scene-stats"><span><Wind size={14} /> Wind {sim.weather.wind} km/h</span><span><CloudSun size={14} /> {sim.weather.cloudCover}% cloud cover</span></div></div>
           <aside className="control-column">
             <div className="panel climate-panel"><PanelTitle icon={CloudSun} title="Outside weather" trailing={<span className="live">LIVE</span>} /><WeatherControl label="Outside temperature" unit="°C" value={sim.weather.outsideTemp} min={-5} max={45} onChange={value => setWeather({ outsideTemp: value })} /><WeatherControl label="Outside humidity" unit="%" value={sim.weather.outsideHumidity} min={5} max={100} onChange={value => setWeather({ outsideHumidity: value })} /><WeatherControl label="Sunlight intensity" unit=" lux" value={sim.weather.sunlight} min={0} max={100000} onChange={value => setWeather({ sunlight: value })} /><WeatherControl label="Cloud coverage" unit="%" value={sim.weather.cloudCover} min={0} max={100} onChange={value => setWeather({ cloudCover: value })} /></div>
             <div className="panel decision-panel"><PanelTitle icon={Bot} title="Automation decision" /><span className="auto-dot">AUTO CONTROL ACTIVE</span>{sim.decisions.slice(0, 2).map(decision => <p key={decision}>{decision}</p>)}</div>
@@ -89,6 +120,6 @@ export default function App() {
         {activeNav === 'Challenges' && <section className="panel challenge-panel"><PanelTitle icon={Trophy} title="Climate challenges" /> <div className="challenges">{scenarios.map(item => <article key={item.id}><span>{item.icon}</span><div><b>{item.name}</b><p>{item.description}</p><small>OBJECTIVE · {item.objective}</small></div><button onClick={() => setSim(loadScenario(item.id))}>Start challenge</button></article>)}</div><div className="achievements"><b>Achievements</b>{sim.achievements.map(item => <span className={item.unlocked ? 'earned' : ''} key={item.id}><Trophy size={14} />{item.label}</span>)}</div></section>}
         {activeNav === 'Settings' && <section className="panel focus-panel settings"><PanelTitle icon={Settings} title="Simulation controls" /><div><button onClick={() => setSim(createSimulation())}><RotateCcw size={16} /> Reset greenhouse</button><button onClick={() => localStorage.setItem('greenlab-simulation', JSON.stringify(sim))}><Save size={16} /> Save simulation</button><button onClick={() => { try { const saved = localStorage.getItem('greenlab-simulation'); if (saved) setSim(JSON.parse(saved)) } catch { /* ignore invalid saved state */ } }}><Play size={16} /> Restore saved simulation</button></div></section>}
       </div>
-    </section>
+    </section>{phoneOpen && <PhoneDashboard sim={sim} chartData={chartData} onClose={() => setPhoneOpen(false)} onToggle={id => setSim(current => toggleActuator(current, id))} onMode={toggleMode} />}
   </main>
 }

@@ -4,7 +4,7 @@ import type { Group } from 'three'
 import { OrbitControls as ThreeOrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import type { ActuatorId, CropId, Simulation } from '../sim/types'
 
-type Props = { sim: Simulation; selected: string | null; onSelect: (id: string) => void }
+type Props = { sim: Simulation; selected: string | null; onSelect: (id: string) => void; onOpenPhone: () => void }
 type ItemProps = { id: string; selected: boolean; onSelect: (id: string) => void; children: ReactNode }
 
 function Interactive({ id, selected, onSelect, children }: ItemProps) {
@@ -34,7 +34,7 @@ function Plant({ position, scale, crop, unhealthy, selected, onSelect, id }: { p
   </group></Interactive>
 }
 
-function Greenhouse({ sim, selected, onSelect }: Props) {
+function Greenhouse({ sim, selected, onSelect, onOpenPhone }: Props) {
   const { crop, plant, actuators } = sim
   const growthScale = .38 + plant.growth / 100 * .78
   const rows = [-1.1, 1.1]
@@ -56,6 +56,8 @@ function Greenhouse({ sim, selected, onSelect }: Props) {
     <Interactive id="tank" selected={selected === 'tank'} onSelect={onSelect}><group position={[-3.5, .62, 2.15]}><mesh><cylinderGeometry args={[.55, .55, 1.2, 24]} /><meshStandardMaterial color="#487b89" metalness={.4} /></mesh><mesh position={[0, .67, 0]}><cylinderGeometry args={[.58, .58, .08, 24]} /><meshStandardMaterial color="#283f43" /></mesh></group></Interactive>
     <Interactive id="pump" selected={selected === 'pump'} onSelect={onSelect}><group position={[-2.4, .35, 2.35]}><mesh><boxGeometry args={[.7, .45, .55]} /><meshStandardMaterial color={actuators.pump.active ? '#62a9c6' : '#394a47'} emissive={actuators.pump.active ? '#205a73' : '#000000'} /></mesh>{actuators.pump.active && <pointLight color="#73d8ff" intensity={3} distance={2} />}</group></Interactive>
     <Interactive id="sensor" selected={selected === 'sensor'} onSelect={onSelect}><group position={[2.6, 1.5, 2.35]}><mesh><boxGeometry args={[.35, .42, .16]} /><meshStandardMaterial color="#d9dbcf" /></mesh><mesh position={[0, .05, .1]}><circleGeometry args={[.055, 16]} /><meshBasicMaterial color="#7cec93" /></mesh></group></Interactive>
+    <Interactive id="controller" selected={selected === 'controller'} onSelect={onSelect}><group position={[3.45, .52, 2.3]} rotation={[-.12, 0, .1]}><mesh><boxGeometry args={[.92, .1, .68]} /><meshStandardMaterial color="#2d7653" roughness={.7} /></mesh><mesh position={[-.2, .07, 0]}><boxGeometry args={[.22, .06, .32]} /><meshStandardMaterial color="#182c32" metalness={.7} /></mesh>{[-.34, -.17, 0, .17, .34].map(x => <mesh key={x} position={[x, .08, -.26]}><sphereGeometry args={[.034, 8, 8]} /><meshBasicMaterial color={actuators.fan.active || actuators.pump.active || actuators.lights.active ? '#8aff73' : '#759180'} /></mesh>)}</group></Interactive>
+    <Interactive id="phone" selected={selected === 'phone'} onSelect={(id) => { onSelect(id); onOpenPhone() }}><group position={[1.95, .58, 2.25]} rotation={[-.18, -.1, .06]}><mesh><boxGeometry args={[.42, .08, .73]} /><meshStandardMaterial color="#152123" metalness={.55} /></mesh><mesh position={[0, .045, .01]}><boxGeometry args={[.32, .012, .55]} /><meshBasicMaterial color="#78b5a3" /></mesh><mesh position={[0, .055, -.23]}><circleGeometry args={[.018, 10]} /><meshBasicMaterial color="#e5efe9" /></mesh></group></Interactive>
     {[-1.9, 1.9].map(x => <Interactive id={`light-${x}`} key={x} selected={selected === `light-${x}`} onSelect={onSelect}><group position={[x, 3.8, 0]}><mesh><boxGeometry args={[1.15, .16, .42]} /><meshStandardMaterial color={actuators.lights.active ? '#f6cc70' : '#59605b'} emissive={actuators.lights.active ? '#d98926' : '#000'} /></mesh></group></Interactive>)}
   </group>
 }
@@ -79,5 +81,5 @@ function CameraControls() {
 }
 
 export default function GreenhouseScene(props: Props) {
-  return <div className="scene" aria-label="Interactive 3D greenhouse"><Canvas shadows camera={{ position: [9, 8, 10], fov: 43 }} dpr={[1, 1.5]}><Greenhouse {...props} /><CameraControls /></Canvas><div className="scene-hint">Drag to explore · Click an object to inspect</div></div>
+  return <div className="scene" aria-label="Interactive 3D greenhouse"><Canvas shadows camera={{ position: [9, 8, 10], fov: 43 }} dpr={[1, 1.5]}><Greenhouse {...props} /><CameraControls /></Canvas><button className="scene-phone-access" onClick={props.onOpenPhone}>Open in-game phone</button><div className="scene-hint">Drag to explore · Click an object to inspect</div></div>
 }
